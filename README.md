@@ -60,6 +60,10 @@ while true do
 end
 ```
 
+# BUILD
+
+see `build.bat`
+
 # TODO
 
 Now only support windows. If you want run in Linux or OSX, you can see https://github.com/zserge/tray
