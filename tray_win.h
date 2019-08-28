@@ -12,13 +12,13 @@ struct tray_menu;
 
 struct tray
 {
-    char icon[MAX_PATH];
+    wchar_t icon[MAX_PATH];
     struct tray_menu *menu;
 };
 
 struct tray_menu
 {
-    char *text;
+    wchar_t *text;
     int disabled;
     int checked;
 
@@ -30,7 +30,7 @@ struct tray_menu
 };
 
 #define WM_TRAY_CALLBACK_MESSAGE (WM_USER + 1)
-#define WC_TRAY_CLASS_NAME "TRAY"
+#define WC_TRAY_CLASS_NAME L"TRAY"
 #define ID_TRAY_FIRST 1000
 
 static WNDCLASSEX wc;
@@ -38,13 +38,13 @@ static NOTIFYICONDATA nid;
 static HWND hwnd;
 static HMENU hmenu = NULL;
 
-static void _set_default_icon(char *icon_path)
+static void _set_default_icon(wchar_t *icon_path)
 {
     memset(icon_path, 0, MAX_PATH);
     if (GetTempPath(MAX_PATH, icon_path) != 0)
     {
-        strcat(icon_path, WC_TRAY_CLASS_NAME);
-        FILE *fp = fopen(icon_path, "wb");
+        wcscat(icon_path, WC_TRAY_CLASS_NAME);
+        FILE *fp = _wfopen(icon_path, L"wb");
         if (fp)
         {
             fwrite(icon_bytes, sizeof((icon_bytes)[0]), sizeof(icon_bytes), fp);
@@ -105,7 +105,7 @@ static HMENU _tray_menu(struct tray_menu *m, UINT *id)
     {
         if (strcmp(m->text, "-") == 0)
         {
-            InsertMenu(hmenu, *id, MF_SEPARATOR, TRUE, "");
+            InsertMenu(hmenu, *id, MF_SEPARATOR, TRUE, L"");
         }
         else
         {
@@ -145,7 +145,7 @@ static void tray_update(struct tray *tray)
     hmenu = _tray_menu(tray->menu, &id);
     SendMessage(hwnd, WM_INITMENUPOPUP, (WPARAM)hmenu, 0);
     HICON icon;
-    if (strlen(tray->icon) == 0)
+    if (wcslen(tray->icon) == 0)
     {
         _set_default_icon(tray->icon);
     }

@@ -69,20 +69,25 @@ static struct tray_menu *new_menu(lua_State *L, int *id)
             const char *pstr = lua_tolstring(L, -1, &tlen);
             if (tlen > 0)
             {
-                item->text = (char *)malloc(tlen + 1);
-                strcpy(item->text, pstr);
+                int utf16len = MultiByteToWideChar(CP_UTF8, 0, pstr, -1, NULL, 0);
+                int bytes = (utf16len + 1) * sizeof(wchar_t);
+                wchar_t *utf16text = malloc(bytes);
+                MultiByteToWideChar(CP_UTF8, 0, pstr, -1, utf16text, utf16len);
+                item->text = utf16text;
             }
         }
         lua_pop(L, 1);
 
         item->checked = 0;
-        if (lua_getfield(L, -1, "checked")== LUA_TBOOLEAN) {
+        if (lua_getfield(L, -1, "checked") == LUA_TBOOLEAN)
+        {
             item->checked = lua_toboolean(L, -1);
         }
         lua_pop(L, 1);
 
         item->disabled = 0;
-        if (lua_getfield(L, -1, "disabled")== LUA_TBOOLEAN) {
+        if (lua_getfield(L, -1, "disabled") == LUA_TBOOLEAN)
+        {
             item->disabled = lua_toboolean(L, -1);
         }
         lua_pop(L, 1);
@@ -126,7 +131,7 @@ static void update_tray_conf(lua_State *L)
     if (lua_getfield(L, -1, "icon") == LUA_TSTRING)
     {
         const char *icon = lua_tostring(L, -1);
-        strcpy(tray.icon, icon);
+        MultiByteToWideChar(CP_UTF8, 0, icon, -1, tray.icon, MAX_PATH);
     }
     lua_pop(L, 1);
 

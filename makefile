@@ -10,7 +10,9 @@ LUA_LIB=lua.lib
 DEF= /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" \
      /D "_CRT_SECURE_NO_WARNINGS" \
      /D "_WINDLL"  \
-     /D LUA_BUILD_AS_DLL
+     /D LUA_BUILD_AS_DLL \
+     /D UNICODE /D _UNICODE
+
 CFLAGS=$(LUA_INC) /c /O2 /Ot /MT /W3 /nologo $(DEF)
 LDFLAGS= /NOLOGO /DLL /SUBSYSTEM:windows \
     /LIBPATH:"$(LUA_LIB_PATH)" $(LUA_LIB) \
@@ -35,6 +37,7 @@ tray.dll: $(OBJ_DIR)\ltray.obj
 install:
     @if not exist $(INSTALL_CDIR) mkdir $(INSTALL_CDIR)
     @for %I in (tray.dll) do copy %I $(INSTALL_CDIR)
+    @copy tray.lib $(LUA_INSTALL_PATH)\lib
 
 clean:
     rd /S /Q $(OBJ_DIR)
