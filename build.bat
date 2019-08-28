@@ -13,7 +13,7 @@ set LUA_SRC_DIR=%cd%
 set LUA_INSTALL_PATH=%cur_dir%\lua
 
 cd /d %cur_dir%\lua-build
-: call nmake /nologo clean
+call nmake /nologo clean
 nmake /nologo
 
 cd /d %cur_dir%
