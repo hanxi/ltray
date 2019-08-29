@@ -32,7 +32,9 @@ static void menu_item_cb(struct tray_menu *item)
         return;
     }
     lua_insert(L, -2);
-    lua_call(L, 1, 0);
+    if (lua_pcall(L, 1, 0, 0)) {
+        printf("%s\n", lua_tostring(L, -1));
+    }
 }
 
 static struct tray_menu *new_menu(lua_State *L, int *id)
