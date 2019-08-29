@@ -37,19 +37,26 @@ static WNDCLASSEX wc;
 static NOTIFYICONDATA nid;
 static HWND hwnd;
 static HMENU hmenu = NULL;
+static wchar_t *default_icon_path = NULL;
 
 static void _set_default_icon(wchar_t *icon_path)
 {
     memset(icon_path, 0, MAX_PATH);
-    if (GetTempPath(MAX_PATH, icon_path) != 0)
+    _wtmpnam(icon_path);
+    default_icon_path = icon_path;
+    FILE *fp = _wfopen(icon_path, L"wb");
+    if (fp)
     {
-        wcscat(icon_path, WC_TRAY_CLASS_NAME);
-        FILE *fp = _wfopen(icon_path, L"wb");
-        if (fp)
-        {
-            fwrite(icon_bytes, sizeof((icon_bytes)[0]), sizeof(icon_bytes), fp);
-            fclose(fp);
-        }
+        fwrite(icon_bytes, sizeof((icon_bytes)[0]), sizeof(icon_bytes), fp);
+        fclose(fp);
+    }
+}
+
+static void _remove_default_icon_file()
+{
+    if (default_icon_path != NULL)
+    {
+        _wremove(default_icon_path);
     }
 }
 
@@ -103,7 +110,7 @@ static HMENU _tray_menu(struct tray_menu *m, UINT *id)
     HMENU hmenu = CreatePopupMenu();
     for (; m != NULL && m->text != NULL; m++, (*id)++)
     {
-        if (strcmp(m->text, "-") == 0)
+        if (wcscmp(m->text, L"-") == 0)
         {
             InsertMenu(hmenu, *id, MF_SEPARATOR, TRUE, L"");
         }
@@ -150,6 +157,7 @@ static void tray_update(struct tray *tray)
         _set_default_icon(tray->icon);
     }
     ExtractIconEx(tray->icon, 0, NULL, &icon, 1);
+
     if (nid.hIcon)
     {
         DestroyIcon(nid.hIcon);
@@ -218,6 +226,9 @@ static void tray_exit()
     {
         DestroyMenu(hmenu);
     }
+
+    _remove_default_icon_file();
+
     PostQuitMessage(0);
     UnregisterClass(WC_TRAY_CLASS_NAME, GetModuleHandle(NULL));
 }
