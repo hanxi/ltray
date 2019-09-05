@@ -2,10 +2,8 @@
 
 #include <lua.h>
 #include <lauxlib.h>
-
-#ifdef _WIN32
+#include <windows.h>
 #include "tray_win.h"
-#endif
 
 #define TRAY_MENU "_tray_menu"
 #define ID_FIRST 1000
@@ -32,7 +30,8 @@ static void menu_item_cb(struct tray_menu *item)
         return;
     }
     lua_insert(L, -2);
-    if (lua_pcall(L, 1, 0, 0)) {
+    if (lua_pcall(L, 1, 0, 0))
+    {
         printf("%s\n", lua_tostring(L, -1));
     }
 }
@@ -183,9 +182,56 @@ static int lexit(lua_State *L)
     return 0;
 }
 
+#define MAX_SYSTEM_PROGRAM (4096)
+static int windows_system(const wchar_t *cmd)
+{
+    PROCESS_INFORMATION p_info;
+    STARTUPINFO s_info;
+    DWORD ReturnValue;
+
+    memset(&s_info, 0, sizeof(s_info));
+    memset(&p_info, 0, sizeof(p_info));
+    s_info.cb = sizeof(s_info);
+
+    wchar_t utf16cmd[MAX_SYSTEM_PROGRAM] = {0};
+    MultiByteToWideChar(CP_UTF8, 0, cmd, -1, utf16cmd, MAX_SYSTEM_PROGRAM);
+    if (CreateProcessW(NULL, utf16cmd, NULL, NULL, 0, 0, NULL, NULL, &s_info, &p_info))
+    {
+        WaitForSingleObject(p_info.hProcess, INFINITE);
+        GetExitCodeProcess(p_info.hProcess, &ReturnValue);
+        CloseHandle(p_info.hProcess);
+        CloseHandle(p_info.hThread);
+    }
+    return ReturnValue;
+}
+
+static int os_execute(lua_State *L)
+{
+    const char *cmd = luaL_optstring(L, 1, NULL);
+    int stat = windows_system(cmd);
+    if (cmd != NULL)
+    {
+        return luaL_execresult(L, stat);
+    }
+    else
+    {
+        lua_pushboolean(L, stat); /* true if there is a shell */
+        return 1;
+    }
+}
+
+static void patch_os_system(L)
+{
+    lua_getglobal(L, "os");
+    lua_pushcfunction(L, os_execute);
+    lua_setfield(L, -2, "execute");
+    lua_pop(L, 1);
+}
+
 LUAMOD_API int luaopen_tray(lua_State *L)
 {
     luaL_checkversion(L);
+    patch_os_system(L);
     luaL_Reg l[] = {
         {"init", linit},
         {"update", lupdate},
